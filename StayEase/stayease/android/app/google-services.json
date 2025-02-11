@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "857200722295",
+    "project_id": "stayease-90f11",
+    "storage_bucket": "stayease-90f11.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:857200722295:android:36994b9f78fdec7a432172",
+        "android_client_info": {
+          "package_name": "com.example.stayease"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "857200722295-80p3kidkltld4chhj5p09sf2knbse7q9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqUX3zPYZvzMIVdHj9gkk8kXuWrLakKrk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "857200722295-80p3kidkltld4chhj5p09sf2knbse7q9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
