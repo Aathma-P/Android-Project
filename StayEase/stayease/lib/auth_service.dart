@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -65,5 +66,20 @@ class AuthService {
   // Get Current User
   User? getCurrentUser() {
     return _auth.currentUser;
+  }
+}
+
+// Firestore Service for Hostel Data
+class FirestoreService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Add Hostel Data to Firestore
+  Future<void> addHostel(Map<String, dynamic> hostelData) async {
+    try {
+      await _firestore.collection('hostels').add(hostelData);
+    } catch (e) {
+      print("Error adding hostel to Firestore: $e");
+      rethrow;
+    }
   }
 }

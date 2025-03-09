@@ -1,4 +1,191 @@
 import 'package:flutter/material.dart';
+import 'auth_service.dart'; // Import the AuthService and FirestoreService
+import 'package:cloud_firestore/cloud_firestore.dart'; // For Firestore
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+// Location selector page
+class LocationSelectorPage extends StatefulWidget {
+  final Function(double, double) onLocationSelected;
+
+  const LocationSelectorPage({super.key, required this.onLocationSelected});
+
+  @override
+  _LocationSelectorPageState createState() => _LocationSelectorPageState();
+}
+
+class _LocationSelectorPageState extends State<LocationSelectorPage> {
+  final MapController _mapController = MapController();
+  LatLng _selectedLocation =
+      LatLng(20.5937, 78.9629); // Default to center of India
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // Permissions are denied, show a message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permissions are denied')),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        // Permissions are denied forever, show a message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Location permissions are permanently denied, please enable in settings'),
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Get current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _selectedLocation = LatLng(position.latitude, position.longitude);
+        _isLoading = false;
+      });
+
+      _mapController.move(_selectedLocation, 15);
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error getting location: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Select Location'),
+        backgroundColor: const Color(0xFFD8C3A5),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context); // Go back without selecting
+          },
+        ),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Expanded(
+                  child: FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: _selectedLocation,
+                      initialZoom: 15.0,
+                      onTap: (tapPosition, latLng) {
+                        setState(() {
+                          _selectedLocation = latLng;
+                        });
+                      },
+                    ),
+                    children: [
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.app',
+                      ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            width: 40.0,
+                            height: 40.0,
+                            point: _selectedLocation,
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Colors.red,
+                              size: 40.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  color: Colors.white,
+                  child: Column(
+                    children: [
+                      Text(
+                        'Selected Location: ${_selectedLocation.latitude.toStringAsFixed(6)}, ${_selectedLocation.longitude.toStringAsFixed(6)}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: _getCurrentLocation,
+                            icon: const Icon(Icons.my_location),
+                            label: const Text('My Location'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueGrey,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              widget.onLocationSelected(
+                                _selectedLocation.latitude,
+                                _selectedLocation.longitude,
+                              );
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Confirm Location'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
 
 class UploadHostelPage extends StatefulWidget {
   const UploadHostelPage({super.key});
@@ -11,8 +198,22 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
   int _currentStep = 0; // Tracks the current step
   String? selectedPlace; // For Place Selection
   final Set<String> selectedAmenities = {}; // For Amenities Selection
-  int guests = 4, bedrooms = 1, beds = 1, bathrooms = 1; // For Basic Details
   String selectedRegion = ""; // For region input
+
+  // New fields for property details
+  String propertyName = "";
+  String city = "";
+  String district = "";
+  String pincode = "";
+
+  // Location coordinates
+  double? selectedLatitude;
+  double? selectedLongitude;
+
+  final FirestoreService _firestoreService =
+      FirestoreService(); // Firestore Service
+  final ImagePicker _picker = ImagePicker(); // Image Picker
+  List<String> imageUrls = []; // List to hold image URLs
 
   // List of places for Step 1
   final List<Map<String, dynamic>> places = [
@@ -50,15 +251,102 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
     }
   }
 
+  // Function to open location selector
+  void _openLocationSelector() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationSelectorPage(
+          onLocationSelected: (lat, lng) {
+            setState(() {
+              selectedLatitude = lat;
+              selectedLongitude = lng;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  // Function to upload image to Cloudinary
+  Future<String?> _uploadImage(XFile image) async {
+    final String cloudinaryUrl =
+        'https://api.cloudinary.com/v1_1/dkaoszzid/image/upload';
+    final String uploadPreset = 'StayEase';
+
+    final request = http.MultipartRequest('POST', Uri.parse(cloudinaryUrl));
+    request.fields['upload_preset'] = uploadPreset;
+    request.files.add(await http.MultipartFile.fromPath('file', image.path));
+
+    final response = await request.send();
+    if (response.statusCode == 200) {
+      final responseData = await response.stream.toBytes();
+      final result = json.decode(String.fromCharCodes(responseData));
+      return result[
+          'secure_url']; // Return the secure URL of the uploaded image
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Failed to upload image: ${response.reasonPhrase}')),
+      );
+      return null;
+    }
+  }
+
+  // Function to save hostel data to Firestore
+  void _saveHostel() async {
+    Map<String, dynamic> hostelData = {
+      'place': selectedPlace ?? "", // Handle null with empty string
+      'amenities': selectedAmenities.toList(),
+      'region': selectedRegion,
+      'propertyName': propertyName,
+      'city': city,
+      'district': district,
+      'pincode': pincode,
+      'latitude': selectedLatitude?.toString() ?? "",
+      'longitude': selectedLongitude?.toString() ?? "",
+      'timestamp': FieldValue.serverTimestamp(), // Add a timestamp
+      'imageUrls': imageUrls, // Add image URLs if available
+    };
+
+    _firestoreService.addHostel(hostelData).then((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Hostel uploaded successfully!')),
+      );
+      // Optionally, navigate to another page
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to upload hostel: $error')),
+      );
+    });
+  }
+
+  // Function to pick images
+  Future<void> _pickImages() async {
+    final List<XFile> images = await _picker.pickMultiImage();
+    if (images != null) {
+      for (XFile image in images) {
+        String? imageUrl = await _uploadImage(image);
+        if (imageUrl != null) {
+          setState(() {
+            imageUrls.add(imageUrl);
+          });
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFFD8C3A5),
+        backgroundColor: const Color(0xFFD8C3A5),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pop(context); // Go back to the previous screen
+          },
         ),
         actions: [
           TextButton(
@@ -118,7 +406,7 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
                           ),
                           borderRadius: BorderRadius.circular(8),
                           color: selectedPlace == place['name']
-                              ? Color(0xFFEAE7DC)
+                              ? const Color(0xFFEAE7DC)
                               : Colors.white,
                         ),
                         child: Row(
@@ -186,7 +474,9 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
                             color: isSelected ? Colors.blueGrey : Colors.grey,
                           ),
                           borderRadius: BorderRadius.circular(8),
-                          color: isSelected ? Color(0xFFEAE7DC) : Colors.white,
+                          color: isSelected
+                              ? const Color(0xFFEAE7DC)
+                              : Colors.white,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -209,93 +499,102 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
               ),
             ],
 
-            // Step 3: Basic Details
+            // Step 3: Property Details
             if (_currentStep == 2) ...[
               const Text(
-                "Share some basics about your place",
+                "Enter property details",
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.blueGrey),
               ),
-              const SizedBox(height: 5),
-              const Text(
-                "You'll add more details later, such as bed types.",
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
               const SizedBox(height: 20),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Property Name
+                      _buildTextField("Property Name", (value) {
+                        setState(() {
+                          propertyName = value;
+                        });
+                      }),
+                      const SizedBox(height: 16),
 
-              // Region Input Field
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: TextFormField(
-                  decoration: InputDecoration(
-                    labelText: "Enter your property's region/location",
-                    hintText: "e.g., Gokarna, India",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: Icon(Icons.location_on, color: Colors.blueGrey),
+                      // City
+                      _buildTextField("City", (value) {
+                        setState(() {
+                          city = value;
+                        });
+                      }),
+                      const SizedBox(height: 16),
+
+                      // District
+                      _buildTextField("District", (value) {
+                        setState(() {
+                          district = value;
+                        });
+                      }),
+                      const SizedBox(height: 16),
+
+                      // Pincode
+                      _buildTextField("Pincode", (value) {
+                        setState(() {
+                          pincode = value;
+                        });
+                      }),
+                      const SizedBox(height: 16),
+
+                      // Location Selection Card
+                      Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "Property Location",
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blueGrey),
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Display selected coordinates if available
+                              if (selectedLatitude != null &&
+                                  selectedLongitude != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Text(
+                                    "Selected Location: ${selectedLatitude!.toStringAsFixed(6)}, ${selectedLongitude!.toStringAsFixed(6)}",
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ),
+
+                              ElevatedButton.icon(
+                                onPressed: _openLocationSelector,
+                                icon: const Icon(Icons.map),
+                                label: Text(selectedLatitude == null
+                                    ? "Select Location on Map"
+                                    : "Change Location"),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueGrey,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedRegion = value; // Update the selected region
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Please enter a region/location";
-                    }
-                    return null;
-                  },
                 ),
-              ),
-              const SizedBox(height: 20),
-
-              // Counters for Guests, Bedrooms, Beds, and Bathrooms
-              _buildCounter(
-                "Guests",
-                guests,
-                () => setState(() {
-                  if (guests > 1) guests--;
-                }),
-                () => setState(() {
-                  guests++;
-                }),
-              ),
-              _buildCounter(
-                "Bedrooms",
-                bedrooms,
-                () => setState(() {
-                  if (bedrooms > 1) bedrooms--;
-                }),
-                () => setState(() {
-                  bedrooms++;
-                }),
-              ),
-              _buildCounter(
-                "Beds",
-                beds,
-                () => setState(() {
-                  if (beds > 1) beds--;
-                }),
-                () => setState(() {
-                  beds++;
-                }),
-              ),
-              _buildCounter(
-                "Bathrooms",
-                bathrooms,
-                () => setState(() {
-                  if (bathrooms > 1) bathrooms--;
-                }),
-                () => setState(() {
-                  bathrooms++;
-                }),
               ),
             ],
 
-            // Step 4: Photo Upload
+            // Step 4: Photo Upload (Optional)
             if (_currentStep == 3) ...[
               const Text(
                 "Add some photos of your flat/apartment",
@@ -307,13 +606,37 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 20),
-              _buildPhotoOption(
-                  'Add photos', Icons.add_photo_alternate_outlined),
-              const SizedBox(height: 10),
-              _buildPhotoOption('Take new photos', Icons.camera_alt_outlined),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      _buildPhotoOption('Add photos',
+                          Icons.add_photo_alternate_outlined, _pickImages),
+                      const SizedBox(height: 10),
+                      _buildPhotoOption('Take new photos',
+                          Icons.camera_alt_outlined, _pickImages),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            // Skip photo upload and save the hostel data
+                            _saveHostel();
+                          },
+                          child: const Text(
+                            "Skip for now",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.blueGrey,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
-
-            const Spacer(),
 
             // Navigation Buttons
             Row(
@@ -324,14 +647,27 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
                   child: const Text("Back",
                       style: TextStyle(fontSize: 16, color: Colors.blueGrey)),
                 ),
-                ElevatedButton(
-                  onPressed: _nextStep,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey,
-                    foregroundColor: Colors.white,
+                if (_currentStep < 3)
+                  ElevatedButton(
+                    onPressed: _nextStep,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text("Next"),
                   ),
-                  child: const Text("Next"),
-                ),
+                if (_currentStep == 3)
+                  ElevatedButton(
+                    onPressed: () {
+                      // Save hostel data with optional images
+                      _saveHostel();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text("Save"),
+                  ),
               ],
             ),
           ],
@@ -340,51 +676,28 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
     );
   }
 
-  // Helper method to build counters for Step 3
-  Widget _buildCounter(
-      String title, int value, Function onDecrement, Function onIncrement) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title,
-                  style: const TextStyle(fontSize: 16, color: Colors.blueGrey)),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => onDecrement(),
-                    icon: const Icon(Icons.remove_circle_outline),
-                    color: Colors.blueGrey,
-                  ),
-                  Text(value.toString(), style: const TextStyle(fontSize: 18)),
-                  IconButton(
-                    onPressed: () => onIncrement(),
-                    icon: const Icon(Icons.add_circle_outline),
-                    color: Colors.blueGrey,
-                  ),
-                ],
-              ),
-            ],
-          ),
+  // Helper method to build text fields
+  Widget _buildTextField(String label, Function(String) onChanged) {
+    return TextFormField(
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
-        Divider(color: Colors.grey.shade300, thickness: 1),
-      ],
+      ),
+      onChanged: onChanged,
+      // Removed validator to prevent validation messages
     );
   }
 
   // Helper method to build photo options for Step 4
-  Widget _buildPhotoOption(String title, IconData icon) {
+  Widget _buildPhotoOption(String title, IconData icon, Function() onTap) {
     return Card(
       elevation: 2,
       child: ListTile(
         leading: Icon(icon, color: Colors.blueGrey),
         title: Text(title, style: const TextStyle(fontSize: 16)),
-        onTap: () {
-          // Handle photo option selection
-        },
+        onTap: onTap,
       ),
     );
   }
