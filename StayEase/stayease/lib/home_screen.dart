@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'wish_list.dart'; // Import the WishlistPage
 import 'profile_page.dart'; // Import the ProfilePage
+import 'uploadHostelPage.dart'; // Import the UploadHostelPage
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,6 +35,12 @@ class _HomePageState extends State<HomePage> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const WishlistPage()),
+      );
+    } else if (index == 2) {
+      // Navigate to UploadHostelPage
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const UploadHostelPage()),
       );
     } else if (index == 4) {
       Navigator.push(
@@ -104,8 +111,8 @@ class _HomePageState extends State<HomePage> {
             label: "Wishlists",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.trip_origin),
-            label: "Trips",
+            icon: Icon(Icons.upload), // Changed to upload icon
+            label: "Upload",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),

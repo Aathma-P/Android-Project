@@ -1,24 +1,5 @@
 import 'package:flutter/material.dart';
-
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Profile Page',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: ProfilePage(),
-    );
-  }
-}
+import 'login_page.dart'; // Import the login page
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -247,7 +228,7 @@ class ProfilePage extends StatelessWidget {
               // Navigate to Licenses
             },
           ),
-          Divider(),
+          Divider(), // ... [Keep all your existing ListTiles unchanged until the logout section]
 
           // Logout
           ListTile(
@@ -255,7 +236,40 @@ class ProfilePage extends StatelessWidget {
             title: Center(
                 child: Text('Log out', style: TextStyle(color: Colors.red))),
             onTap: () {
-              // Log out action
+              // Show confirmation dialog
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Logout'),
+                    content: Text('Are you sure you want to logout?'),
+                    actions: [
+                      TextButton(
+                        child: Text('Cancel'),
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Close the dialog
+                        },
+                      ),
+                      TextButton(
+                        child:
+                            Text('Logout', style: TextStyle(color: Colors.red)),
+                        onPressed: () {
+                          // Close the dialog
+                          Navigator.of(context).pop();
+                          // Navigate to login page and remove all previous routes
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (context) => LoginPage(),
+                            ),
+                            (Route<dynamic> route) =>
+                                false, // Remove all previous routes
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
             },
           ),
         ],
