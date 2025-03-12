@@ -16,6 +16,8 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+  final TextEditingController usernameController =
+      TextEditingController(); // Add username controller
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -27,9 +29,17 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
+    if (usernameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a username')),
+      );
+      return;
+    }
+
     User? user = await _authService.signUpWithEmail(
       emailController.text,
       passwordController.text,
+      usernameController.text, // Pass the username
     );
     if (user != null) {
       Navigator.pushReplacement(
@@ -76,6 +86,31 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 40),
+
+                // Username Field
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: TextField(
+                    controller: usernameController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.person_outline,
+                          color: Colors.white.withOpacity(0.7)),
+                      border: InputBorder.none,
+                      hintText: 'Username',
+                      hintStyle:
+                          TextStyle(color: Colors.white.withOpacity(0.5)),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Email Field
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.1),
@@ -97,6 +132,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // Password Field
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.1),
@@ -132,6 +169,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // Confirm Password Field
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.1),
@@ -167,6 +206,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 32),
+
+                // Sign Up Button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -189,6 +230,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // Login Prompt
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'wish_list.dart';
 import 'profile_page.dart';
 import 'uploadHostelPage.dart';
-import 'HostelDetailPage.dart'; // Ensure this import is correct
+import 'HostelDetailPage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -92,6 +93,7 @@ class _HomePageState extends State<HomePage> {
                     itemBuilder: (context, index) {
                       var property = propertyList[index];
                       var data = property.data() as Map<String, dynamic>;
+                      data['id'] = property.id; // Add document ID to data
 
                       return _buildPropertyCard(data);
                     },
@@ -158,10 +160,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildPropertyCard(Map<String, dynamic> data) {
-    // Fetch the list of image URLs from Firestore
     List<dynamic> imageUrls = data['imageUrls'] ?? [];
-
-    // Use the first image URL if available, otherwise use an empty string
     String imageUrl = imageUrls.isNotEmpty ? imageUrls[0] : '';
 
     return GestureDetector(
@@ -179,85 +178,135 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(20),
         ),
         color: Colors.white,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            // Display Image from URL
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: imageUrl.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      height: 200,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) =>
-                          const Center(child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) => Image.asset(
-                          'assets/placeholder.jpg',
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: imageUrl.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) =>
+                              const Center(child: CircularProgressIndicator()),
+                          errorWidget: (context, url, error) => Image.asset(
+                              'assets/placeholder.jpg',
+                              fit: BoxFit.cover),
+                        )
+                      : Image.asset('assets/placeholder.jpg',
+                          height: 200,
+                          width: double.infinity,
                           fit: BoxFit.cover),
-                    )
-                  : Image.asset('assets/placeholder.jpg',
-                      height: 200, width: double.infinity, fit: BoxFit.cover),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data['propertyName'] ?? "Unnamed Property",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.blueGrey,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${data['city']}, ${data['district']}, ${data['region']}",
+                        style: const TextStyle(
+                          color: Colors.blueGrey,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Pincode: ${data['pincode']}",
+                        style: const TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Coordinates: ${data['latitude']}, ${data['longitude']}",
+                        style: const TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Place Type: ${data['place']}",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.blueGrey,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Amenities: ${data['amenities']?.join(', ') ?? 'No amenities listed'}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.blueGrey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data['propertyName'] ?? "Unnamed Property",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Colors.blueGrey,
+            Positioned(
+              top: 10,
+              right: 10,
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('user_profiles')
+                    .doc(FirebaseAuth.instance.currentUser?.uid)
+                    .collection('wishlist')
+                    .doc(data['id'])
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final isInWishlist =
+                      snapshot.hasData && snapshot.data!.exists;
+                  return IconButton(
+                    icon: Icon(
+                      Icons.favorite,
+                      color: isInWishlist ? Colors.red : Colors.grey,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "${data['city']}, ${data['district']}, ${data['region']}",
-                    style: const TextStyle(
-                      color: Colors.blueGrey,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Pincode: ${data['pincode']}",
-                    style: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Coordinates: ${data['latitude']}, ${data['longitude']}",
-                    style: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Place Type: ${data['place']}",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.blueGrey,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Amenities: ${data['amenities']?.join(', ') ?? 'No amenities listed'}",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.blueGrey,
-                    ),
-                  ),
-                ],
+                    onPressed: () {
+                      _toggleWishlist(data);
+                    },
+                  );
+                },
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _toggleWishlist(Map<String, dynamic> hostelData) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final userWishlistRef = FirebaseFirestore.instance
+        .collection('user_profiles')
+        .doc(user.uid)
+        .collection('wishlist');
+
+    final hostelId =
+        hostelData['id']; // Ensure your hostel data has an 'id' field
+
+    final doc = await userWishlistRef.doc(hostelId).get();
+    if (doc.exists) {
+      await userWishlistRef.doc(hostelId).delete();
+    } else {
+      await userWishlistRef.doc(hostelId).set(hostelData);
+    }
   }
 }

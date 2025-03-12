@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Google Sign-In
   Future<User?> signInWithGoogle() async {
@@ -21,7 +22,25 @@ class AuthService {
 
       UserCredential userCredential =
           await _auth.signInWithCredential(credential);
-      return userCredential.user;
+      User? user = userCredential.user;
+
+      if (user != null) {
+        DocumentSnapshot userDoc =
+            await _firestore.collection('user_profiles').doc(user.uid).get();
+
+        // If the user doesn't exist in Firestore, add them
+        if (!userDoc.exists) {
+          await _firestore.collection('user_profiles').doc(user.uid).set({
+            'uid': user.uid,
+            'email': user.email,
+            'username': googleUser.displayName ?? 'User',
+            'photoURL': user.photoURL ?? '',
+            'createdAt': DateTime.now(),
+          });
+        }
+      }
+
+      return user;
     } catch (e) {
       print("Error signing in with Google: $e");
       return null;
@@ -29,14 +48,27 @@ class AuthService {
   }
 
   // Sign Up with Email & Password
-  Future<User?> signUpWithEmail(String email, String password) async {
+  Future<User?> signUpWithEmail(
+      String email, String password, String username) async {
     try {
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      return userCredential.user;
+
+      User? user = userCredential.user;
+      if (user != null) {
+        await _firestore.collection('user_profiles').doc(user.uid).set({
+          'uid': user.uid,
+          'email': email,
+          'username': username,
+          'photoURL': '',
+          'createdAt': DateTime.now(),
+        });
+      }
+
+      return user;
     } catch (e) {
       print("Error signing up: $e");
       return null;
@@ -67,6 +99,22 @@ class AuthService {
   User? getCurrentUser() {
     return _auth.currentUser;
   }
+
+  // Get User Data from Firestore
+  Future<Map<String, dynamic>?> getUserData(String uid) async {
+    try {
+      DocumentSnapshot userDoc =
+          await _firestore.collection('user_profiles').doc(uid).get();
+      if (userDoc.exists) {
+        return userDoc.data() as Map<String, dynamic>;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching user data: $e");
+      return null;
+    }
+  }
 }
 
 // Firestore Service for Hostel Data
@@ -79,6 +127,41 @@ class FirestoreService {
       await _firestore.collection('hostels').add(hostelData);
     } catch (e) {
       print("Error adding hostel to Firestore: $e");
+      rethrow;
+    }
+  }
+
+  // Fetch Hostels from Firestore
+  Stream<QuerySnapshot> fetchHostels() {
+    return _firestore.collection('hostels').snapshots();
+  }
+
+  // Get Specific Hostel by ID
+  Future<DocumentSnapshot> getHostelById(String hostelId) async {
+    try {
+      return await _firestore.collection('hostels').doc(hostelId).get();
+    } catch (e) {
+      print("Error fetching hostel: $e");
+      rethrow;
+    }
+  }
+
+  // Update Hostel Data
+  Future<void> updateHostel(String hostelId, Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('hostels').doc(hostelId).update(data);
+    } catch (e) {
+      print("Error updating hostel: $e");
+      rethrow;
+    }
+  }
+
+  // Delete Hostel
+  Future<void> deleteHostel(String hostelId) async {
+    try {
+      await _firestore.collection('hostels').doc(hostelId).delete();
+    } catch (e) {
+      print("Error deleting hostel: $e");
       rethrow;
     }
   }
