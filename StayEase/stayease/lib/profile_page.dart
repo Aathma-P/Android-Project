@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_page.dart'; // Import the login page
+import 'ListYourSpacePage.dart'; // Import the ListYourSpacePage
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -131,7 +132,13 @@ class ProfilePage extends StatelessWidget {
             title: Text('List your space'),
             trailing: Icon(Icons.arrow_forward),
             onTap: () {
-              // Navigate to List Space
+              // Navigate to ListYourSpacePage
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ListYourSpacePage(),
+                ),
+              );
             },
           ),
           ListTile(
@@ -228,7 +235,7 @@ class ProfilePage extends StatelessWidget {
               // Navigate to Licenses
             },
           ),
-          Divider(), // ... [Keep all your existing ListTiles unchanged until the logout section]
+          Divider(),
 
           // Logout
           ListTile(

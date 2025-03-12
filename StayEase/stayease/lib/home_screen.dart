@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'wish_list.dart'; // Import the WishlistPage
-import 'profile_page.dart'; // Import the ProfilePage
-import 'uploadHostelPage.dart'; // Import the UploadHostelPage
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'wish_list.dart';
+import 'profile_page.dart';
+import 'uploadHostelPage.dart';
+import 'HostelDetailPage.dart'; // Ensure this import is correct
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,24 +14,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0; // Tracks the current selected tab
+  int _selectedIndex = 0;
 
-  final List<Map<String, dynamic>> propertyList = [
-    {
-      "image": "lib/images/zostel-gokarna.jpg",
-      "location": "Gokarna, India",
-      "distance": "521 kilometers away",
-      "date": "Jan 21 - 26",
-      "price": "\$347",
-    },
-    {
-      "image": "lib/images/hostel1.jpg",
-      "location": "Varkala, India",
-      "distance": "450 kilometers away",
-      "date": "Feb 10 - 15",
-      "price": "\$299",
-    },
-  ];
+  // Fetch hostel data from Firestore
+  Stream<QuerySnapshot> _fetchHostels() {
+    return FirebaseFirestore.instance.collection('hostels').snapshots();
+  }
 
   void _onItemTapped(int index) {
     if (index == 1) {
@@ -37,7 +28,6 @@ class _HomePageState extends State<HomePage> {
         MaterialPageRoute(builder: (context) => const WishlistPage()),
       );
     } else if (index == 2) {
-      // Navigate to UploadHostelPage
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const UploadHostelPage()),
@@ -83,11 +73,29 @@ class _HomePageState extends State<HomePage> {
             _buildPriceToggle(),
             const SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                itemCount: propertyList.length,
-                itemBuilder: (context, index) {
-                  final property = propertyList[index];
-                  return _buildPropertyCard(property);
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _fetchHostels(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text("No hostels available"));
+                  }
+
+                  var propertyList = snapshot.data!.docs;
+
+                  return ListView.builder(
+                    itemCount: propertyList.length > 5
+                        ? 5
+                        : propertyList.length, // Display up to 5 properties
+                    itemBuilder: (context, index) {
+                      var property = propertyList[index];
+                      var data = property.data() as Map<String, dynamic>;
+
+                      return _buildPropertyCard(data);
+                    },
+                  );
                 },
               ),
             ),
@@ -111,7 +119,7 @@ class _HomePageState extends State<HomePage> {
             label: "Wishlists",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.upload), // Changed to upload icon
+            icon: Icon(Icons.upload),
             label: "Upload",
           ),
           BottomNavigationBarItem(
@@ -149,53 +157,106 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildPropertyCard(Map<String, dynamic> property) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
-              property['image'],
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+  Widget _buildPropertyCard(Map<String, dynamic> data) {
+    // Fetch the list of image URLs from Firestore
+    List<dynamic> imageUrls = data['imageUrls'] ?? [];
+
+    // Use the first image URL if available, otherwise use an empty string
+    String imageUrl = imageUrls.isNotEmpty ? imageUrls[0] : '';
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HostelDetailPage(hostelData: data),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  property['location'],
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.blueGrey,
-                  ),
-                ),
-                Text(property['distance'],
-                    style: TextStyle(color: Colors.grey)),
-                Text(property['date'], style: TextStyle(color: Colors.grey)),
-                Text(
-                  "${property['price']} / night",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.blueGrey,
-                  ),
-                ),
-              ],
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        color: Colors.white,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Display Image from URL
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: imageUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) =>
+                          const Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) => Image.asset(
+                          'assets/placeholder.jpg',
+                          fit: BoxFit.cover),
+                    )
+                  : Image.asset('assets/placeholder.jpg',
+                      height: 200, width: double.infinity, fit: BoxFit.cover),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data['propertyName'] ?? "Unnamed Property",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.blueGrey,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "${data['city']}, ${data['district']}, ${data['region']}",
+                    style: const TextStyle(
+                      color: Colors.blueGrey,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Pincode: ${data['pincode']}",
+                    style: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Coordinates: ${data['latitude']}, ${data['longitude']}",
+                    style: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Place Type: ${data['place']}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.blueGrey,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Amenities: ${data['amenities']?.join(', ') ?? 'No amenities listed'}",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.blueGrey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
