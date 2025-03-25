@@ -440,8 +440,18 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
       initialValue: initialValue,
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: TextStyle(color: Colors.blue[800]),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.blue[100]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.blue[100]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.blue[800]!),
         ),
       ),
       onChanged: onChanged,
@@ -453,8 +463,14 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
     return Card(
       elevation: 2,
       child: ListTile(
-        leading: Icon(icon, color: Colors.blueGrey),
-        title: Text(title, style: const TextStyle(fontSize: 16)),
+        leading: Icon(icon, color: Colors.blue[800]),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.blue[800],
+          ),
+        ),
         onTap: onTap,
       ),
     );
@@ -464,13 +480,20 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFD8C3A5),
+        backgroundColor: Colors.blue[100],
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Colors.blue[800]),
           onPressed: () {
             Navigator.pop(context);
           },
+        ),
+        title: Text(
+          "Upload Property",
+          style: TextStyle(
+            color: Colors.blue[800],
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           TextButton(
@@ -480,375 +503,423 @@ class _UploadHostelPageState extends State<UploadHostelPage> {
               );
               Navigator.pop(context);
             },
-            child: const Text("Save & exit",
-                style: TextStyle(color: Colors.black)),
+            child: Text(
+              "Save & exit",
+              style: TextStyle(color: Colors.blue[800]),
+            ),
           ),
         ],
       ),
       body: isUploading
-          ? const Center(
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text("Uploading... Please wait"),
+                  CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Colors.blue[800]!),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Uploading... Please wait",
+                    style: TextStyle(color: Colors.blue[800]),
+                  ),
                 ],
               ),
             )
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Progress Indicator
-                  LinearProgressIndicator(
-                    value: (_currentStep + 1) / 4,
-                    backgroundColor: Colors.grey.shade300,
-                    valueColor:
-                        const AlwaysStoppedAnimation<Color>(Colors.blueGrey),
-                    minHeight: 8,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Step 1: Place Selection
-                  if (_currentStep == 0) ...[
-                    const Text(
-                      "Which of these best describes your place?",
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey),
+          : Container(
+              color: Colors.blue[50],
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Progress Indicator
+                    LinearProgressIndicator(
+                      value: (_currentStep + 1) / 4,
+                      backgroundColor: Colors.blue[100],
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.blue[800]!),
+                      minHeight: 8,
                     ),
                     const SizedBox(height: 20),
-                    Expanded(
-                      child: GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 2,
+
+                    // Step 1: Place Selection
+                    if (_currentStep == 0) ...[
+                      Text(
+                        "Which of these best describes your place?",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[800],
                         ),
-                        itemCount: places.length,
-                        itemBuilder: (context, index) {
-                          final place = places[index];
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedPlace = place['name'];
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
+                      ),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 2,
+                          ),
+                          itemCount: places.length,
+                          itemBuilder: (context, index) {
+                            final place = places[index];
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedPlace = place['name'];
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: selectedPlace == place['name']
+                                        ? Colors.blue[800]!
+                                        : Colors.blue[100]!,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
                                   color: selectedPlace == place['name']
-                                      ? Colors.blueGrey
-                                      : Colors.grey,
+                                      ? Colors.blue[50]
+                                      : Colors.white,
                                 ),
-                                borderRadius: BorderRadius.circular(8),
-                                color: selectedPlace == place['name']
-                                    ? const Color(0xFFEAE7DC)
-                                    : Colors.white,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(place['icon'], color: Colors.blueGrey),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    place['name'],
-                                    style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.blueGrey),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-
-                  // Step 2: Amenities Selection
-                  if (_currentStep == 1) ...[
-                    const Text(
-                      "Tell guests what your place has to offer",
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      "You can add more amenities after you publish your listing.",
-                      style: TextStyle(fontSize: 16, color: Colors.blueGrey),
-                    ),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: GridView.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 2,
-                        ),
-                        itemCount: amenities.length,
-                        itemBuilder: (context, index) {
-                          final amenity = amenities[index];
-                          final isSelected =
-                              selectedAmenities.contains(amenity['name']);
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  selectedAmenities.remove(amenity['name']);
-                                } else {
-                                  selectedAmenities.add(amenity['name']);
-                                }
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: isSelected
-                                      ? Colors.blueGrey
-                                      : Colors.grey,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                                color: isSelected
-                                    ? const Color(0xFFEAE7DC)
-                                    : Colors.white,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(amenity['icon'], color: Colors.blueGrey),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    amenity['name'],
-                                    style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.blueGrey),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-
-                  // Step 3: Property Details
-                  if (_currentStep == 2) ...[
-                    const Text(
-                      "Enter property details",
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey),
-                    ),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            _buildTextField("Property Name", (value) {
-                              setState(() {
-                                propertyName = value;
-                              });
-                            }, initialValue: propertyName),
-                            const SizedBox(height: 16),
-                            _buildTextField("City", (value) {
-                              setState(() {
-                                city = value;
-                              });
-                            }, initialValue: city),
-                            const SizedBox(height: 16),
-                            _buildTextField("District", (value) {
-                              setState(() {
-                                district = value;
-                              });
-                            }, initialValue: district),
-                            const SizedBox(height: 16),
-                            _buildTextField("Pincode", (value) {
-                              setState(() {
-                                pincode = value;
-                              });
-                            }, initialValue: pincode),
-                            const SizedBox(height: 16),
-                            Card(
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Text(
-                                      "Property Location",
+                                    Icon(place['icon'],
+                                        color: Colors.blue[800]),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      place['name'],
                                       style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blueGrey),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    if (selectedLatitude != null &&
-                                        selectedLongitude != null)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 12),
-                                        child: Text(
-                                          "Selected Location: ${selectedLatitude!.toStringAsFixed(6)}, ${selectedLongitude!.toStringAsFixed(6)}",
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                      ),
-                                    ElevatedButton.icon(
-                                      onPressed: _openLocationSelector,
-                                      icon: const Icon(Icons.map),
-                                      label: Text(selectedLatitude == null
-                                          ? "Select Location on Map"
-                                          : "Change Location"),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blueGrey,
-                                        foregroundColor: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.blue[800],
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
                       ),
-                    ),
-                  ],
+                    ],
 
-                  // Step 4: Photo Upload
-                  if (_currentStep == 3) ...[
-                    const Text(
-                      "Add some photos of your place",
-                      style: TextStyle(
+                    // Step 2: Amenities Selection
+                    if (_currentStep == 1) ...[
+                      Text(
+                        "Tell guests what your place has to offer",
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "You'll need photos to get started. You can add more or make changes later.",
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            _buildPhotoOption(
-                                'Add photos from gallery',
-                                Icons.add_photo_alternate_outlined,
-                                _pickImages),
-                            const SizedBox(height: 10),
-                            _buildPhotoOption('Take new photos',
-                                Icons.camera_alt_outlined, _takePhoto),
-                            if (uploadedImages.isNotEmpty) ...[
-                              const SizedBox(height: 20),
-                              const Text(
-                                "Uploaded Images:",
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 10),
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: uploadedImages.length,
-                                itemBuilder: (context, index) {
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    child: ListTile(
-                                      leading: const Icon(Icons.image,
-                                          color: Colors.blueGrey),
-                                      title: Text(uploadedImages[index]
-                                              ['filename'] ??
-                                          'Image ${index + 1}'),
-                                      subtitle: Text('Uploaded successfully'),
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.delete,
-                                            color: Colors.red),
-                                        onPressed: () => _removeImage(index),
+                          color: Colors.blue[800],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        "You can add more amenities after you publish your listing.",
+                        style: TextStyle(fontSize: 16, color: Colors.blue[800]),
+                      ),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 2,
+                          ),
+                          itemCount: amenities.length,
+                          itemBuilder: (context, index) {
+                            final amenity = amenities[index];
+                            final isSelected =
+                                selectedAmenities.contains(amenity['name']);
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  if (isSelected) {
+                                    selectedAmenities.remove(amenity['name']);
+                                  } else {
+                                    selectedAmenities.add(amenity['name']);
+                                  }
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? Colors.blue[800]!
+                                        : Colors.blue[100]!,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: isSelected
+                                      ? Colors.blue[50]
+                                      : Colors.white,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(amenity['icon'],
+                                        color: Colors.blue[800]),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      amenity['name'],
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.blue[800],
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
-                            ],
-                            if (uploadedImages.isEmpty) ...[
-                              const SizedBox(height: 20),
-                              const Center(
-                                child: Text(
-                                  "No images uploaded yet",
-                                  style: TextStyle(
-                                      fontSize: 16, color: Colors.grey),
+                                  ],
                                 ),
                               ),
-                            ],
-                            const SizedBox(height: 20),
-                            Center(
-                              child: TextButton(
-                                onPressed: () {
-                                  _saveHostel();
-                                },
-                                child: const Text(
-                                  "Skip for now",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.blueGrey,
-                                    decoration: TextDecoration.underline,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+
+                    // Step 3: Property Details
+                    if (_currentStep == 2) ...[
+                      Text(
+                        "Enter property details",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[800],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              _buildTextField("Property Name", (value) {
+                                setState(() {
+                                  propertyName = value;
+                                });
+                              }, initialValue: propertyName),
+                              const SizedBox(height: 16),
+                              _buildTextField("City", (value) {
+                                setState(() {
+                                  city = value;
+                                });
+                              }, initialValue: city),
+                              const SizedBox(height: 16),
+                              _buildTextField("District", (value) {
+                                setState(() {
+                                  district = value;
+                                });
+                              }, initialValue: district),
+                              const SizedBox(height: 16),
+                              _buildTextField("Pincode", (value) {
+                                setState(() {
+                                  pincode = value;
+                                });
+                              }, initialValue: pincode),
+                              const SizedBox(height: 16),
+                              Card(
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Property Location",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue[800],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      if (selectedLatitude != null &&
+                                          selectedLongitude != null)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(bottom: 12),
+                                          child: Text(
+                                            "Selected Location: ${selectedLatitude!.toStringAsFixed(6)}, ${selectedLongitude!.toStringAsFixed(6)}",
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.blue[800]),
+                                          ),
+                                        ),
+                                      ElevatedButton.icon(
+                                        onPressed: _openLocationSelector,
+                                        icon: Icon(Icons.map,
+                                            color: Colors.white),
+                                        label: Text(
+                                          selectedLatitude == null
+                                              ? "Select Location on Map"
+                                              : "Change Location",
+                                          style: const TextStyle(
+                                              color: Colors.white),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue[800],
+                                          foregroundColor: Colors.white,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
+                    ],
+
+                    // Step 4: Photo Upload
+                    if (_currentStep == 3) ...[
+                      Text(
+                        "Add some photos of your place",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[800],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "You'll need photos to get started. You can add more or make changes later.",
+                        style: TextStyle(fontSize: 14, color: Colors.blue[800]),
+                      ),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              _buildPhotoOption(
+                                'Add photos from gallery',
+                                Icons.add_photo_alternate_outlined,
+                                _pickImages,
+                              ),
+                              const SizedBox(height: 10),
+                              _buildPhotoOption(
+                                'Take new photos',
+                                Icons.camera_alt_outlined,
+                                _takePhoto,
+                              ),
+                              if (uploadedImages.isNotEmpty) ...[
+                                const SizedBox(height: 20),
+                                Text(
+                                  "Uploaded Images:",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue[800],
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: uploadedImages.length,
+                                  itemBuilder: (context, index) {
+                                    return Card(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      child: ListTile(
+                                        leading: Icon(Icons.image,
+                                            color: Colors.blue[800]),
+                                        title: Text(
+                                          uploadedImages[index]['filename'] ??
+                                              'Image ${index + 1}',
+                                          style: TextStyle(
+                                              color: Colors.blue[800]),
+                                        ),
+                                        subtitle: Text(
+                                          'Uploaded successfully',
+                                          style: TextStyle(
+                                              color: Colors.blue[800]),
+                                        ),
+                                        trailing: IconButton(
+                                          icon: Icon(Icons.delete,
+                                              color: Colors.red),
+                                          onPressed: () => _removeImage(index),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                              if (uploadedImages.isEmpty) ...[
+                                const SizedBox(height: 20),
+                                Center(
+                                  child: Text(
+                                    "No images uploaded yet",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.blue[800],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 20),
+                              Center(
+                                child: TextButton(
+                                  onPressed: () {
+                                    _saveHostel();
+                                  },
+                                  child: Text(
+                                    "Skip for now",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.blue[800],
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+
+                    // Navigation Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: _previousStep,
+                          child: Text(
+                            "Back",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.blue[800],
+                            ),
+                          ),
+                        ),
+                        if (_currentStep < 3)
+                          ElevatedButton(
+                            onPressed: _nextStep,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[800],
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text("Next"),
+                          ),
+                        if (_currentStep == 3)
+                          ElevatedButton(
+                            onPressed: _saveHostel,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[800],
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text("Save"),
+                          ),
+                      ],
                     ),
                   ],
-
-                  // Navigation Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        onPressed: _previousStep,
-                        child: const Text("Back",
-                            style: TextStyle(
-                                fontSize: 16, color: Colors.blueGrey)),
-                      ),
-                      if (_currentStep < 3)
-                        ElevatedButton(
-                          onPressed: _nextStep,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueGrey,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text("Next"),
-                        ),
-                      if (_currentStep == 3)
-                        ElevatedButton(
-                          onPressed: _saveHostel,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text("Save"),
-                        ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
     );

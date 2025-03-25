@@ -16,6 +16,28 @@ class HostelDetailPage extends StatefulWidget {
 class _HostelDetailPageState extends State<HostelDetailPage> {
   final _reviewController = TextEditingController();
   int _rating = 0;
+  int _currentImageIndex = 0;
+  final PageController _pageController = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(() {
+      int nextPage = _pageController.page!.round();
+      if (_currentImageIndex != nextPage) {
+        setState(() {
+          _currentImageIndex = nextPage;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _reviewController.dispose();
+    super.dispose();
+  }
 
   // Function to submit a review
   Future<void> _submitReview() async {
@@ -99,6 +121,19 @@ class _HostelDetailPageState extends State<HostelDetailPage> {
     }
   }
 
+  // Function to open full-screen gallery
+  void _openGallery(List<dynamic> imageUrls, int initialIndex) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FullScreenGallery(
+          imageUrls: imageUrls,
+          initialIndex: initialIndex,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     List<dynamic> imageUrls = widget.hostelData['imageUrls'] ?? [];
@@ -115,29 +150,68 @@ class _HostelDetailPageState extends State<HostelDetailPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // **Image Carousel**
-            SizedBox(
-              height: 200,
-              child: imageUrls.isNotEmpty
-                  ? PageView.builder(
-                      itemCount: imageUrls.length,
-                      itemBuilder: (context, index) {
-                        return CachedNetworkImage(
-                          imageUrl: imageUrls[index],
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => const Center(
-                            child: CircularProgressIndicator(),
+            Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                SizedBox(
+                  height: 250,
+                  child: imageUrls.isNotEmpty
+                      ? PageView.builder(
+                          controller: _pageController,
+                          itemCount: imageUrls.length,
+                          onPageChanged: (index) {
+                            setState(() {
+                              _currentImageIndex = index;
+                            });
+                          },
+                          itemBuilder: (context, index) {
+                            return GestureDetector(
+                              onTap: () => _openGallery(imageUrls, index),
+                              child: Hero(
+                                tag: 'image_$index',
+                                child: CachedNetworkImage(
+                                  imageUrl: imageUrls[index],
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          height: 250,
+                          width: double.infinity,
+                          color: Colors.grey[300],
+                          child:
+                              const Center(child: Text("No Image Available")),
+                        ),
+                ),
+                if (imageUrls.length > 1)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        imageUrls.length,
+                        (index) => Container(
+                          width: 8,
+                          height: 8,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _currentImageIndex == index
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.5),
                           ),
-                          errorWidget: (context, url, error) =>
-                              const Icon(Icons.error),
-                        );
-                      },
-                    )
-                  : Container(
-                      height: 200,
-                      width: double.infinity,
-                      color: Colors.grey[300],
-                      child: const Center(child: Text("No Image Available")),
+                        ),
+                      ),
                     ),
+                  ),
+              ],
             ),
 
             Padding(
@@ -424,5 +498,172 @@ class _HostelDetailPageState extends State<HostelDetailPage> {
         .map((review) => review['rating'] as int)
         .reduce((a, b) => a + b);
     return totalRating / reviews.length;
+  }
+}
+
+// Custom FullScreenGallery Widget using built-in Flutter widgets
+class FullScreenGallery extends StatefulWidget {
+  final List<dynamic> imageUrls;
+  final int initialIndex;
+
+  const FullScreenGallery({
+    Key? key,
+    required this.imageUrls,
+    required this.initialIndex,
+  }) : super(key: key);
+
+  @override
+  _FullScreenGalleryState createState() => _FullScreenGalleryState();
+}
+
+class _FullScreenGalleryState extends State<FullScreenGallery> {
+  late PageController _pageController;
+  late int _currentIndex;
+  late TransformationController _transformationController;
+  double _scale = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+    _transformationController = TransformationController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  void _resetZoom() {
+    setState(() {
+      _transformationController.value = Matrix4.identity();
+      _scale = 1.0;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Main Image View
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.imageUrls.length,
+            onPageChanged: (index) {
+              _resetZoom();
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onDoubleTap: () {
+                  if (_scale == 1.0) {
+                    // Zoom in
+                    setState(() {
+                      _transformationController.value = Matrix4.identity()
+                        ..scale(2.5);
+                      _scale = 2.5;
+                    });
+                  } else {
+                    // Zoom out
+                    _resetZoom();
+                  }
+                },
+                child: InteractiveViewer(
+                  transformationController: _transformationController,
+                  maxScale: 4.0,
+                  minScale: 0.8,
+                  child: Hero(
+                    tag: 'image_$index',
+                    child: CachedNetworkImage(
+                      imageUrl: widget.imageUrls[index],
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                      errorWidget: (context, url, error) => const Center(
+                        child: Icon(Icons.error, color: Colors.white, size: 50),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // Close button
+          Positioned(
+            top: 40,
+            left: 20,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+
+          // Image counter
+          Positioned(
+            top: 40,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Text(
+                "${_currentIndex + 1}/${widget.imageUrls.length}",
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          ),
+
+          // Bottom dots indicator
+          if (widget.imageUrls.length > 1)
+            Positioned(
+              bottom: 30,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.imageUrls.length,
+                  (index) => Container(
+                    width: 10,
+                    height: 10,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _currentIndex == index
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.5),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // Zoom instruction
+          Positioned(
+            bottom: 60,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Text(
+                "Double-tap to zoom",
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.7), fontSize: 14),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

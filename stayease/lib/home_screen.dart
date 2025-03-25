@@ -184,14 +184,31 @@ class _HomePageState extends State<HomePage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: TextField(
             controller: _searchController,
-            decoration: const InputDecoration(
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
               hintText: "Start your search",
-              prefixIcon: Icon(Icons.search, color: Colors.blueGrey),
+              hintStyle: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+              prefixIcon: Container(
+                margin: const EdgeInsets.only(left: 8),
+                child: Icon(Icons.search, color: Colors.blue[800]),
+              ),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 20),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
           ),
         ),

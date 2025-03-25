@@ -4,6 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'login_page.dart'; // Import the login page
 import 'ListYourSpacePage.dart'; // Import the ListYourSpacePage
 
+// Import new pages
+import 'feedback_page.dart';
+import 'terms_of_service_page.dart';
+import 'privacy_policy_page.dart';
+import 'how_it_works_page.dart';
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -86,10 +92,23 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           const Divider(),
+
+          // Account Settings Section
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'Account Settings',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text('Personal information'),
-            trailing: const Icon(Icons.arrow_forward),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               // Handle personal information tap
             },
@@ -97,7 +116,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ListTile(
             leading: const Icon(Icons.home),
             title: const Text('List your space'),
-            trailing: const Icon(Icons.arrow_forward),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               User? user =
                   FirebaseAuth.instance.currentUser; // Get the current user
@@ -121,11 +140,89 @@ class _ProfilePageState extends State<ProfilePage> {
               }
             },
           ),
+
+          // Support Section
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'Support',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.feedback),
+            title: const Text('Give us feedback'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FeedbackPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.help),
+            title: const Text('How StayEase works'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HowItWorksPage(),
+                ),
+              );
+            },
+          ),
+
+          // Legal Section
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'Legal',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.description),
+            title: const Text('Terms of Service'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TermsOfServicePage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip),
+            title: const Text('Privacy Policy'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrivacyPolicyPage(),
+                ),
+              );
+            },
+          ),
+
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Center(
-                child: Text('Log out', style: TextStyle(color: Colors.red))),
+            title: const Text('Log out', style: TextStyle(color: Colors.red)),
             onTap: () {
               showDialog(
                 context: context,
